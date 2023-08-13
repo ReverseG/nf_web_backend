@@ -7,9 +7,9 @@ from utils.config import *
 class Bert(torch.nn.Module):
     def __init__(self, config: TrainConfig):
         super(Bert, self).__init__()
-        self.bert = BertModel.from_pretrained(config.pretrain_model_path, ignore_mismatched_sizes=True)
-        for param in self.bert.parameters():
-            param.requires_grad = False
+        # self.bert = BertModel.from_pretrained(config.pretrain_model_path, ignore_mismatched_sizes=True)
+        # for param in self.bert.parameters():
+        #     param.requires_grad = False
         self.fc = torch.nn.Linear(config.hidden_size, config.num_classes)
         self.relu = torch.nn.ReLU()
         self.label2idx = config.label_dict

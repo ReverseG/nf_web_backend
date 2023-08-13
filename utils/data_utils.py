@@ -16,7 +16,7 @@ def load_model(config: TrainConfig, model_type, bert_pretrain):
     elif model_type == "Bert":
         model = Bert(config=config)
     model.to(device=config.device)
-    # model.set_bert(bert_pretrain)
+    model.set_bert(bert_pretrain)
     model.load_state_dict(torch.load(config.save_model_path, map_location=config.device))
     return model
 
