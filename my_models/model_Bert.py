@@ -22,6 +22,9 @@ class Bert(torch.nn.Module):
         out = self.fc(pooled)
         return self.relu(out)
 
+    def set_bert(self, bert_pretrain):
+        self.bert = bert_pretrain
+
     def predict(self, X, topK):  # this is used only by batch_size = 1
         with torch.no_grad():
             predict = self.forward(X)

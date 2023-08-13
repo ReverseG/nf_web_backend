@@ -49,6 +49,24 @@ def similar_search(data):
     return titles
 
 
+def build_paper_dict():
+    title_to_paper = {}
+    with open('data_module/class.txt') as file:
+        lines = file.readlines()
+        codes = [line.strip() for line in lines]
+        for code in codes:
+            # 论文数据文件
+            path = 'data_module/{}_data.txt'.format(code)
+            if os.path.exists(path):
+                with open(path, encoding='utf-8', mode='r') as file:
+                    lines = file.readlines()
+                    lines = [line.strip() for line in lines]
+                    records = [line.split('\t') for line in lines]
+                    for r in records:
+                        title_to_paper[r[0]] = r
+    return title_to_paper
+
+
 def get_by_title(title):
     sql = 'select pbi.title, pbi.keywords, pdi.abstract \
         from project_basic_info pbi left join project_detail_info pdi \
@@ -65,19 +83,32 @@ def get_by_title(title):
     return {'title': fields[0], 'keywords': fields[1], 'abstract': fields[2]}
 
 
+def get_by_title2(title):
+    fields = title_to_paper.get(title)
+    if fields is None:
+        return None
+    return {'title': fields[0], 'keywords': fields[1], 'abstract': fields[2]}
+
+
 def build_graph(papers):
+    titles = []
     nodes = []
     links = []
     eles = set()
     for p in papers:
+        titles.append(p['title'])
         eles.add(p['title'])
         for w in p['keywords'].split(';'):
             eles.add(w)
     ele_index = {}
+    # 添加节点
     for index, ele in enumerate(eles):
         ele_index[ele] = index
-        nodes.append({'id':index, 'name':ele})
+        # 区分标题、关键词节点
+        type = 'T' if ele in titles else 'K'
+        nodes.append({'id':index, 'name':ele, 'type': type})
     link_index = 0
+    # 添加关系
     for p in papers:
         t = p['title']
         for w in p['keywords'].split(';'):
@@ -112,12 +143,13 @@ annoy_tables = load_annoy()
 bert_tokenizer = BertTokenizer.from_pretrained('./bert_wwm')
 bert_model = BertModel.from_pretrained('./bert_wwm')
 bert_model.to(device=config.device)
-predict_model = load_model(config, 'Bert')
+predict_model = load_model(config, 'Bert', bert_model)
+title_to_paper = build_paper_dict()
 
-db = pymysql.connect(host='localhost',
-                     user='root',
-                     password='root123',
-                     database='nature_foundation')
+# db = pymysql.connect(host='localhost',
+#                      user='root',
+#                      password='123456',
+#                      database='nature_foundation')
 
 
 @app.route('/api/test')
@@ -140,7 +172,7 @@ def predict():
 def deep_mining():
     data = request.json
     similar_titles = similar_search(data)
-    papers = [get_by_title(t) for t in similar_titles]
+    papers = [get_by_title2(t) for t in similar_titles]
     papers = [p for p in papers if p is not None]
     return jsonify({'papers': papers,
                     'word_cloud': build_word_cloud(papers),

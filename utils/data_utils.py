@@ -7,7 +7,7 @@ from my_models.model_BertRCNN import Bert_RCNN
 from my_models.model_Bert import Bert
 
 
-def load_model(config: TrainConfig, model_type):
+def load_model(config: TrainConfig, model_type, bert_pretrain):
     model = None
     if model_type == 'Bert_RCNN':
         model = Bert_RCNN(config=config)
@@ -16,6 +16,7 @@ def load_model(config: TrainConfig, model_type):
     elif model_type == "Bert":
         model = Bert(config=config)
     model.to(device=config.device)
+    # model.set_bert(bert_pretrain)
     model.load_state_dict(torch.load(config.save_model_path, map_location=config.device))
     return model
 
